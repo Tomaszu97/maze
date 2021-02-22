@@ -4,6 +4,6 @@ Uses OpenGL.
 
 ## TODO 
 - [x] implement maze map generation algorithm
-- [] implement graphical representation of the map
-- [] animate the visualization
-- [] implement ray tracing
+- [ ] implement graphical representation of the map
+- [ ] animate the visualization
+- [ ] implement ray tracing
