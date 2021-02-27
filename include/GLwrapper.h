@@ -1,11 +1,15 @@
 #ifndef GLWRAPPER_H
 #define GLWRAPPER_H
 
-#include "glad.h"
-#include "GLFW/glfw3.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "glad.h"
+#include "GLFW/glfw3.h"
+
+
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
 
 GLFWwindow *window;
 unsigned int shaderProgram;
@@ -17,7 +21,7 @@ void framebufferSizeCallback(GLFWwindow *window, int width, int height){
 char *readFileIntoStr(char *fileName, unsigned int strBufSize){
     FILE *f = fopen(fileName, "r");
     if(!f){
-        printf("error: couldn't open file %s", fileName);
+        printf("error: couldn't open file %s\n", fileName);
         exit(1);
     }
     
@@ -75,7 +79,7 @@ void setupGraphicsWindow(int windowWidth, int windowHeight){
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if(!success){
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        printf("error: vertex shader compilation failed!\n%s", infoLog);
+        printf("error: vertex shader compilation failed! Log below:\n%s", infoLog);
         exit(1);
     }
 
@@ -88,7 +92,7 @@ void setupGraphicsWindow(int windowWidth, int windowHeight){
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if(!success){
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        printf("error: fragment shader compilation failed!\n%s", infoLog);
+        printf("error: fragment shader compilation failed! Log below:\n%s", infoLog);
         exit(1);
     }
 
@@ -108,6 +112,8 @@ void setupGraphicsWindow(int windowWidth, int windowHeight){
     //we don't need these anymore
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+    
+    glEnable(GL_DEPTH_TEST);
 }
 
 #endif

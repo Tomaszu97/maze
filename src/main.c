@@ -2,32 +2,68 @@
 #include <stdlib.h>
 #include <math.h>
 #include "GLwrapper.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-
 #include "cglm/cglm.h"
 #include "cglm/struct.h"
 #include "cglm/call.h"
+#include "primitives.h"
+#include "scene.h"
+#include "map.h"
 
+#define MAP_W 41 //longer
+#define MAP_H 41 //shorter
 
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
-
-float mixVal = 0.5;
+float deltaT = 0.0f;
+float lastT = 0.0f;
 
 void processInput(GLFWwindow *window){
+    const float camSpeed = 5.0f * deltaT;
+    const float fovChangeSpeed = 75.0f * deltaT;
+
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(window, 1);
     }
-    if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
-        mixVal += 0.01f;
-        if (mixVal > 1.0f) mixVal = 1.0f;
-    }
-    if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
-        mixVal -= 0.01f;
-        if (mixVal < 0.0f) mixVal = 0.0f;
-    }
+    // if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS){
+    //     fov += fovChangeSpeed;
+    //     if (fov > 135.0f) fov = 135.0f;
+    // }
+    // if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
+    //     fov -= fovChangeSpeed;
+    //     if (fov < 10.0f) fov = 10.0f;
+    // }
+    // if(glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS){
+    //     vec3 tmp;
+    //     glm_vec3_scale(camFront, camSpeed, tmp);
+    //     glm_vec3_sub(camPos, tmp, camPos);
+    // }
+    // if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+    //     vec3 tmp;
+    //     glm_vec3_scale(camFront, camSpeed, tmp);
+    //     glm_vec3_add(camPos, tmp, camPos);
+    // }
+    // if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+    //     vec3 tmp;
+    //     glm_vec3_scale(camUp, camSpeed, tmp);
+    //     glm_vec3_add(camPos, tmp, camPos);
+    // }
+    // if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+    //     vec3 tmp;
+    //     glm_vec3_scale(camUp, camSpeed, tmp);
+    //     glm_vec3_sub(camPos, tmp, camPos);
+    // }
+    // if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+    //     vec3 tmpCamRight;
+    //     glm_vec3_cross(camUp, camFront, tmpCamRight);
+    //     glm_normalize(tmpCamRight);
+    //     glm_vec3_scale(tmpCamRight, camSpeed, tmpCamRight);
+    //     glm_vec3_add(camPos, tmpCamRight, camPos);
+    // }
+    // if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+    //     vec3 tmpCamRight;
+    //     glm_vec3_cross(camUp, camFront, tmpCamRight);
+    //     glm_normalize(tmpCamRight);
+    //     glm_vec3_scale(tmpCamRight, camSpeed, tmpCamRight);
+    //     glm_vec3_sub(camPos, tmpCamRight, camPos);
+    // }
 }
 
 int randint(int min, int max)
@@ -44,118 +80,61 @@ int randint(int min, int max)
     return max ? (rand() % max + min) : min;
 }
 
-unsigned int loadTexture(char *fileName){
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //mipmap has no effect whatsoever
-    
-    int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(1);
-    unsigned char *data = stbi_load(fileName, &width, &height, &nrChannels, 0);
-
-    if(data){
-        unsigned int format = GL_RGBA;
-        switch(nrChannels){
-            case 3:
-                format = GL_RGB;
-                break;
-            case 4:
-                format = GL_RGBA;
-                break;
-        }
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-    else{
-        printf("error: failed to load texture from file");
-    }
-    stbi_image_free(data);
-    return texture;
-}
-
 int main(){
     setupGraphicsWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
     
-    float vertices1[] = {
-        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f,
-        -0.5f, 0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
-         0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   1.0f, 0.0f,
-         0.5f, 0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,
-    };
-    unsigned int indices[] = {
-        0,1,2,
-        1,2,3
-    };
+    initScene();
+                                    
+    unsigned int arrX = MAP_W;
+    unsigned int arrY = MAP_H;
+    unsigned int cubeObjCount = arrX*arrY;
 
-    unsigned int VBO[1];
-    glGenBuffers(1, VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
-    
-    unsigned int VAO[1];
-    glGenVertexArrays(1, VAO);
-    glBindVertexArray(VAO[0]);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
-    glEnableVertexAttribArray(2);
+    unsigned int cubeObj = createObject(cubeVertices, 
+                                    36, 
+                                    "block/spruce_planks.png",
+                                    (vec3){1.0f, 1.0f, 1.0f},
+                                    (vec3){0.0f, 0.0f, 0.0f},
+                                    0,
+                                    (vec3){0.0f, -0.5001f, 0.0f});
 
-    unsigned int EBO[1];
-    glGenBuffers(1, EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    
-    unsigned int catTexture = loadTexture("res/garfield.png");
-    unsigned int dogTexture = loadTexture("res/hourglassdog.jpg");
+    // do stuff to properly scale texture so it repeats nicely
+    planeVertices[13] = (1.0f*((float)arrX+4.0f));
+    planeVertices[23] = (1.0f*((float)arrX+4.0f));
+    planeVertices[28] = (1.0f*((float)arrX+4.0f));
+    planeVertices[9] = (1.0f*((float)arrY+4.0f));
+    planeVertices[19] = (1.0f*((float)arrY+4.0f));
+    planeVertices[24] = (1.0f*((float)arrY+4.0f));
 
-    glUseProgram(shaderProgram);
-    glUniform1i(glGetUniformLocation(shaderProgram, "texture0"), 0);
-    glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 1);
+    unsigned int planeObj = createObject(planeVertices, 
+                                            6, 
+                                            "block/jungle_log.png",
+                                            (vec3){(float)arrX+4.0f, (float)arrY+4.0f, 1.0f},
+                                            (vec3){1.0f, 0.0f, 0.0f},
+                                            90,
+                                            (vec3){0.0f, 0.0f, 0.0f});
 
-    
     while(!glfwWindowShouldClose(window)){
+        float currentT = glfwGetTime();
+        deltaT = currentT - lastT;
+        lastT = currentT;
         processInput(window);
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-       
-        float sineVal = (sin(M_PI_2*glfwGetTime()*2)+1)/2;
-        int sineUnif = glGetUniformLocation(shaderProgram, "sine");
-        glUseProgram(shaderProgram);
-        glUniform1f(sineUnif, sineVal);
+        float sineVal = sin(M_PI_2*glfwGetTime()*0.125);
+        float cosineVal = cos(M_PI_2*glfwGetTime()*0.125);
+        fov = 65;
+        setCameraPosition((vec3){sineVal*arrX, 0.8f*arrX, cosineVal*arrX});
+        setCameraLookAt((vec3){0,0,0});
 
-        mat4 transform;
-        glm_mat4_identity(transform);
-        glm_translate(transform, (vec4){0.50f, 0.50f, 0.0f, 1.0f});
-        glm_rotate(transform, glm_rad(mixVal*360), (vec3){0.0f, 0.0f, 1.0f});
-        glm_scale(transform, (vec3){(sineVal-0.5)*2, (sineVal-0.5)*2, 0.5f});
-        //^ goes up, lowest transform is first
-        unsigned int transformUnif = glGetUniformLocation(shaderProgram, "transform");
-        glUseProgram(shaderProgram);
-        glUniformMatrix4fv(transformUnif, 1, GL_FALSE, transform);
+        clearSceneColor((vec3){0.5f, 0.3f, 0.7f});
+        
+        for(int i=0; i<cubeObjCount; i++){
+            vec3 tempPos = {(float)(i%arrX)-((float)(arrX/2)-0.5f), -0.5001f, (float)floor(i/arrY)-((float)(arrY/2)-0.5f)};
+            memcpy(positionBuf[cubeObj], tempPos, 3*sizeof(float));
+            if(i%2)drawObject(cubeObj);
+        }
+        drawObject(planeObj);
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glUseProgram(shaderProgram);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, catTexture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, dogTexture);
-
-        glBindVertexArray(VAO[0]);
-        //glDrawArrays(GL_TRIANGLES, 0, 6); 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-
-        glBindVertexArray(0);  
-                
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -163,3 +142,16 @@ int main(){
     glfwTerminate();
     return 0;
 }
+
+
+
+
+
+// int main(int argc, char *argv[]){
+//     struct map *ma = newMap(MAP_W, MAP_H);     
+    
+//     generateMaze(ma);
+//     delMap(ma);
+
+//     return 0;
+// }
