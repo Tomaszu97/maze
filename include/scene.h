@@ -134,7 +134,7 @@ void drawObject(unsigned int objectIndex){
 
     mat4 projection;
     glm_mat4_identity(projection);
-    glm_perspective(glm_rad(fov), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 100.0f, projection);
+    glm_perspective(glm_rad(fov), (float)WINDOW_WIDTH/(float)WINDOW_HEIGHT, 0.1f, 10000.0f, projection);
 
     glUseProgram(shaderProgram);
     unsigned int modelUnif = glGetUniformLocation(shaderProgram, "modelMat");

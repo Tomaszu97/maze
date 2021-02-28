@@ -9,8 +9,9 @@
 #include "scene.h"
 #include "map.h"
 
-#define MAP_W 41 //longer
-#define MAP_H 41 //shorter
+#define LABYRINTH_SIZE 61 // odd numbers only
+#define MAP_W LABYRINTH_SIZE
+#define MAP_H LABYRINTH_SIZE
 
 float deltaT = 0.0f;
 float lastT = 0.0f;
@@ -66,23 +67,13 @@ void processInput(GLFWwindow *window){
     // }
 }
 
-int randint(int min, int max)
-{
-    int tmp;
-    if (max>=min)
-        max-= min;
-    else
-    {
-        tmp= min - max;
-        min= max;
-        max= tmp;
-    }
-    return max ? (rand() % max + min) : min;
-}
-
 int main(){
+    struct map *ma = newMap(MAP_W, MAP_H);
+    prepareMaze(ma);
+    int mazeFinished = 0;
+    float mazeTickTimer = glfwGetTime();
+
     setupGraphicsWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
-    
     initScene();
                                     
     unsigned int arrX = MAP_W;
@@ -97,6 +88,15 @@ int main(){
                                     0,
                                     (vec3){0.0f, -0.5001f, 0.0f});
 
+    unsigned int spelunkerCubeObj = createObject(cubeVertices, 
+                                36, 
+                                "block/ice.png",
+                                (vec3){1.0f, 1.0f, 1.0f},
+                                (vec3){0.0f, 0.0f, 0.0f},
+                                0,
+                                (vec3){0.0f, -0.5001f, 0.0f});
+
+
     // do stuff to properly scale texture so it repeats nicely
     planeVertices[13] = (1.0f*((float)arrX+4.0f));
     planeVertices[23] = (1.0f*((float)arrX+4.0f));
@@ -108,29 +108,49 @@ int main(){
     unsigned int planeObj = createObject(planeVertices, 
                                             6, 
                                             "block/jungle_log.png",
-                                            (vec3){(float)arrX+4.0f, (float)arrY+4.0f, 1.0f},
+                                            (vec3){(float)arrX+2.0f, (float)arrY+2.0f, 1.0f},
                                             (vec3){1.0f, 0.0f, 0.0f},
                                             90,
                                             (vec3){0.0f, 0.0f, 0.0f});
 
     while(!glfwWindowShouldClose(window)){
+        // timing
         float currentT = glfwGetTime();
         deltaT = currentT - lastT;
         lastT = currentT;
+        
+        // input handling
         processInput(window);
 
+        // calculation
         float sineVal = sin(M_PI_2*glfwGetTime()*0.125);
         float cosineVal = cos(M_PI_2*glfwGetTime()*0.125);
-        fov = 65;
-        setCameraPosition((vec3){sineVal*arrX, 0.8f*arrX, cosineVal*arrX});
-        setCameraLookAt((vec3){0,0,0});
-
-        clearSceneColor((vec3){0.5f, 0.3f, 0.7f});
+        fov = 55;
+        setCameraPosition((vec3){0.7*sineVal*(arrX), 0.6*arrX, 0.7*cosineVal*(arrY)});
+        setCameraLookAt((vec3){0,arrX/4,0});
         
+        if(mazeFinished == 0){
+            mazeTickTimer += deltaT;
+            if (mazeTickTimer > 0.02){
+                mazeTickTimer = 0;
+                if(stepMaze(ma) == 0 ) mazeFinished = 1;
+            }
+        }
+
+        // drawing
+        clearSceneColor((vec3){0.93f, 0.6f, 0.26f});
         for(int i=0; i<cubeObjCount; i++){
-            vec3 tempPos = {(float)(i%arrX)-((float)(arrX/2)-0.5f), -0.5001f, (float)floor(i/arrY)-((float)(arrY/2)-0.5f)};
-            memcpy(positionBuf[cubeObj], tempPos, 3*sizeof(float));
-            if(i%2)drawObject(cubeObj);
+            vec3 tempPos = {(float)(i%arrX)-(float)(arrX/2), -0.5001f, (float)floor(i/arrY)-(float)(arrY/2)};
+            
+            if (i == current_x+(MAP_W*current_y)){
+                memcpy(positionBuf[spelunkerCubeObj], tempPos, 3*sizeof(float));
+                drawObject(spelunkerCubeObj);
+            }
+            // inverted so it looks better and renders quicker
+            else if (ma->data[i] == VISITED){
+                memcpy(positionBuf[cubeObj], tempPos, 3*sizeof(float));
+                drawObject(cubeObj);
+            }
         }
         drawObject(planeObj);
 
@@ -143,15 +163,3 @@ int main(){
     return 0;
 }
 
-
-
-
-
-// int main(int argc, char *argv[]){
-//     struct map *ma = newMap(MAP_W, MAP_H);     
-    
-//     generateMaze(ma);
-//     delMap(ma);
-
-//     return 0;
-// }

@@ -20,11 +20,15 @@ struct map{
     char *data;
 };
 
-void randInit();
+extern int current_x;
+extern int current_y;
+
+void randInitialize();
 int randint();
 struct map *newMap(int width, int height);
 void delMap(struct map *ma);
 void printMap(struct map *ma, int current_x, int current_y);
-void generateMaze(struct map *ma);
+void prepareMaze(struct map *ma);
+int stepMaze(struct map *ma);
 
 #endif
