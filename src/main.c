@@ -23,14 +23,14 @@ void processInput(GLFWwindow *window){
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(window, 1);
     }
-    // if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS){
-    //     fov += fovChangeSpeed;
-    //     if (fov > 135.0f) fov = 135.0f;
-    // }
-    // if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-    //     fov -= fovChangeSpeed;
-    //     if (fov < 10.0f) fov = 10.0f;
-    // }
+    if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS){
+        fov += fovChangeSpeed;
+        if (fov > 135.0f) fov = 135.0f;
+    }
+    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
+        fov -= fovChangeSpeed;
+        if (fov < 10.0f) fov = 10.0f;
+    }
     // if(glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS){
     //     vec3 tmp;
     //     glm_vec3_scale(camFront, camSpeed, tmp);
@@ -82,7 +82,7 @@ int main(){
 
     unsigned int cubeObj = createObject(cubeVertices, 
                                     36, 
-                                    "block/spruce_planks.png",
+                                    "block/gold_block.png",
                                     (vec3){1.0f, 1.0f, 1.0f},
                                     (vec3){0.0f, 0.0f, 0.0f},
                                     0,
@@ -90,7 +90,7 @@ int main(){
 
     unsigned int spelunkerCubeObj = createObject(cubeVertices, 
                                 36, 
-                                "block/ice.png",
+                                "block/diamond_block.png",
                                 (vec3){1.0f, 1.0f, 1.0f},
                                 (vec3){0.0f, 0.0f, 0.0f},
                                 0,
@@ -107,7 +107,7 @@ int main(){
 
     unsigned int planeObj = createObject(planeVertices, 
                                             6, 
-                                            "block/jungle_log.png",
+                                            "block/blue_ice.png",
                                             (vec3){(float)arrX+2.0f, (float)arrY+2.0f, 1.0f},
                                             (vec3){1.0f, 0.0f, 0.0f},
                                             90,
@@ -125,7 +125,7 @@ int main(){
         // calculation
         float sineVal = sin(M_PI_2*glfwGetTime()*0.125);
         float cosineVal = cos(M_PI_2*glfwGetTime()*0.125);
-        fov = 55;
+
         setCameraPosition((vec3){0.7*sineVal*(arrX), 0.6*arrX, 0.7*cosineVal*(arrY)});
         setCameraLookAt((vec3){0,arrX/4,0});
         
@@ -137,8 +137,13 @@ int main(){
             }
         }
 
+        float sineVal2 = ((sin(M_PI_2*glfwGetTime()*4)+1)/4)+0.5;
+        int sineUnif = glGetUniformLocation(shaderProgram, "sine");
+        glUseProgram(shaderProgram);
+        glUniform1f(sineUnif, sineVal2);
+
         // drawing
-        clearSceneColor((vec3){0.93f, 0.6f, 0.26f});
+        clearSceneColor((vec3){0.7f, 0.4f, 0.5f});
         for(int i=0; i<cubeObjCount; i++){
             vec3 tempPos = {(float)(i%arrX)-(float)(arrX/2), -0.5001f, (float)floor(i/arrY)-(float)(arrY/2)};
             
